@@ -169,23 +169,41 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         // ✅ SECURE: Validate required fields first
-        if (!item || !item.id || !item.name || typeof item.price !== 'number') {
-          console.error('Cart item validation failed: Missing required fields', item);
-          toast.error('Invalid item: Missing required information', toastOptions);
+        if (!item) {
+          console.error('Cart item validation failed: Item is null or undefined');
+          toast.error('Cannot add empty item to cart', toastOptions);
+          return;
+        }
+
+        if (!item.id) {
+          console.error('Cart item validation failed: Missing product ID', item);
+          toast.error('Invalid item: Missing product ID', toastOptions);
+          return;
+        }
+
+        if (!item.name) {
+          console.error('Cart item validation failed: Missing product name', item);
+          toast.error('Invalid item: Missing product name', toastOptions);
+          return;
+        }
+
+        if (typeof item.price !== 'number' || item.price <= 0) {
+          console.error('Cart item validation failed: Invalid price', item);
+          toast.error('Invalid item: Invalid price', toastOptions);
           return;
         }
 
         // ✅ SECURE: Validate input with Zod schema
         const validation = validateCartItem({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity || 1,
+          id: String(item.id).trim(),
+          name: String(item.name).trim(),
+          price: Number(item.price),
+          quantity: Number(item.quantity) || 1,
         });
 
         if (!validation.success) {
-          const errors = validation.error.issues.map(issue => issue.message).join(', ');
-          console.error('Cart item validation failed:', errors);
+          const errors = validation.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+          console.error('Cart item validation failed:', errors, item);
           toast.error(`Invalid item: ${errors}`, toastOptions);
           return;
         }

@@ -108,25 +108,12 @@ export function setSecurityHeaders(): void {
     document.head.appendChild(meta);
   }
 
-  // ⚠️ WARNING: X-Frame-Options and frame-ancestors cannot be set via meta tags
-  // These must be set by your web server. The browser will ignore them here.
+  // ⚠️ NOTE: X-Frame-Options, X-Content-Type-Options, and Referrer-Policy
+  // should be set by your web server/CDN, not via meta tags.
+  // Meta tags for these headers are ignored by browsers and will show warnings.
 
-  // Only set other headers if not in production or for development
-  if (import.meta.env.DEV) {
-    const headers = [
-      { name: 'X-Content-Type-Options', content: 'nosniff' },
-      { name: 'Referrer-Policy', content: 'strict-origin-when-cross-origin' },
-    ];
-
-    headers.forEach(header => {
-      if (!document.querySelector(`meta[http-equiv="${header.name}"]`)) {
-        const metaTag = document.createElement('meta');
-        metaTag.httpEquiv = header.name;
-        metaTag.content = header.content;
-        document.head.appendChild(metaTag);
-      }
-    });
-  }
+  // For development, we'll skip setting these via meta tags to avoid console warnings
+  console.log('✅ CSP security headers initialized (server headers recommended for production)');
 }
 
 // ✅ SECURE: Secure Request Wrapper

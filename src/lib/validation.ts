@@ -98,21 +98,22 @@ export const orderValidationSchema = z.object({
 export const cartItemValidationSchema = z.object({
   id: z
     .string()
-    .uuid('Invalid product ID format')
-    .min(1, 'Product ID is required'),
-  
+    .min(1, 'Product ID is required')
+    .max(100, 'Product ID too long')
+    .trim(),
+
   name: z
     .string()
     .min(1, 'Product name is required')
     .max(100, 'Product name must be less than 100 characters')
     .trim(),
-  
+
   price: z
     .number()
     .positive('Product price must be positive')
     .max(1000, 'Product price cannot exceed ₹1,000')
     .multipleOf(0.01, 'Invalid price precision'),
-  
+
   quantity: z
     .number()
     .int('Quantity must be a whole number')
