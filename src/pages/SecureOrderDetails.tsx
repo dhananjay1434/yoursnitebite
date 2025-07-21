@@ -169,168 +169,253 @@ const SecureOrderDetails = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-nitebite-dark"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="min-h-screen bg-nitebite-midnight"
     >
       <Navbar transparent={false} />
-      
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-8">
+
+      <div className="page-container py-6 pt-20 sm:pt-24 pb-32">
+        <div className="max-w-4xl mx-auto">
+          {/* Header Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 sm:mb-8"
+          >
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(-1)}
-              className="text-nitebite-text-muted hover:text-nitebite-highlight"
+              className="glassmorphic-ghost-button text-nitebite-text hover:text-nitebite-yellow transition-all duration-300 w-fit"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold text-nitebite-highlight">
-              Order Details
-            </h1>
-          </div>
+            <div className="flex items-center gap-3">
+              <Shield className="w-6 h-6 text-nitebite-yellow animate-glow-pulse-yellow" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-gradient">
+                Secure Checkout
+              </h1>
+            </div>
+          </motion.div>
 
-          <div className="space-y-6">
-            {/* Customer Information */}
-            <div className="glassmorphic-card p-6 rounded-2xl">
-              <h2 className="text-xl font-semibold text-nitebite-highlight mb-4">
-                Customer Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-nitebite-text mb-2">
-                    Full Name *
-                  </label>
-                  <Input
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="bg-nitebite-dark-accent/50 border-white/10"
-                    required
-                  />
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Left Column - Forms */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Customer Information */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="glassmorphic-card p-6 sm:p-8 rounded-2xl hover:shadow-glow transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-full bg-nitebite-yellow/20 flex items-center justify-center">
+                    <span className="text-nitebite-yellow font-bold text-sm">1</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-nitebite-purple">
+                    Customer Information
+                  </h2>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-nitebite-text mb-2">
-                    Email *
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="bg-nitebite-dark-accent/50 border-white/10"
-                    required
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="sm:col-span-2 sm:col-span-1">
+                    <label className="block text-sm font-medium text-nitebite-text mb-2">
+                      Full Name *
+                    </label>
+                    <Input
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="bg-nitebite-midnight/50 border-nitebite-purple/30 focus:border-nitebite-yellow focus:ring-nitebite-yellow/20 text-nitebite-text placeholder:text-nitebite-text-muted transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2 sm:col-span-1">
+                    <label className="block text-sm font-medium text-nitebite-text mb-2">
+                      Email *
+                    </label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="bg-nitebite-midnight/50 border-nitebite-purple/30 focus:border-nitebite-yellow focus:ring-nitebite-yellow/20 text-nitebite-text placeholder:text-nitebite-text-muted transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2 sm:col-span-1">
+                    <label className="block text-sm font-medium text-nitebite-text mb-2">
+                      WhatsApp Number *
+                    </label>
+                    <Input
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      placeholder="Enter your WhatsApp number"
+                      className="bg-nitebite-midnight/50 border-nitebite-purple/30 focus:border-nitebite-yellow focus:ring-nitebite-yellow/20 text-nitebite-text placeholder:text-nitebite-text-muted transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2 sm:col-span-1">
+                    <label className="block text-sm font-medium text-nitebite-text mb-2">
+                      Hostel Number *
+                    </label>
+                    <Select value={hostelNumber} onValueChange={setHostelNumber}>
+                      <SelectTrigger className="bg-nitebite-midnight/50 border-nitebite-purple/30 focus:border-nitebite-yellow focus:ring-nitebite-yellow/20 text-nitebite-text">
+                        <SelectValue placeholder="Select hostel" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-nitebite-midnight border-nitebite-purple/30">
+                        {hostelOptions.map((hostel) => (
+                          <SelectItem key={hostel} value={hostel} className="text-nitebite-text hover:bg-nitebite-purple/20">
+                            Hostel {hostel}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-nitebite-text mb-2">
+                      Room Number *
+                    </label>
+                    <Input
+                      value={roomNumber}
+                      onChange={(e) => setRoomNumber(e.target.value)}
+                      placeholder="Enter your room number"
+                      className="bg-nitebite-midnight/50 border-nitebite-purple/30 focus:border-nitebite-yellow focus:ring-nitebite-yellow/20 text-nitebite-text placeholder:text-nitebite-text-muted transition-all duration-300"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-nitebite-text mb-2">
-                    WhatsApp Number *
-                  </label>
-                  <Input
-                    value={whatsappNumber}
-                    onChange={(e) => setWhatsappNumber(e.target.value)}
-                    placeholder="Enter your WhatsApp number"
-                    className="bg-nitebite-dark-accent/50 border-white/10"
-                    required
-                  />
+              </motion.div>
+
+              {/* Payment Options */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="glassmorphic-card p-6 sm:p-8 rounded-2xl hover:shadow-glow transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-full bg-nitebite-yellow/20 flex items-center justify-center">
+                    <span className="text-nitebite-yellow font-bold text-sm">2</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-nitebite-purple">
+                    Payment Method
+                  </h2>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-nitebite-text mb-2">
-                    Hostel Number *
-                  </label>
-                  <Select value={hostelNumber} onValueChange={setHostelNumber}>
-                    <SelectTrigger className="bg-nitebite-dark-accent/50 border-white/10">
-                      <SelectValue placeholder="Select hostel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hostelOptions.map((hostel) => (
-                        <SelectItem key={hostel} value={hostel}>
-                          Hostel {hostel}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-nitebite-text mb-2">
-                    Room Number *
-                  </label>
-                  <Input
-                    value={roomNumber}
-                    onChange={(e) => setRoomNumber(e.target.value)}
-                    placeholder="Enter your room number"
-                    className="bg-nitebite-dark-accent/50 border-white/10"
-                    required
-                  />
-                </div>
-              </div>
+
+                <PaymentOptions
+                  selectedMethod={paymentMethod}
+                  onMethodChange={setPaymentMethod}
+                  totalAmount={total}
+                />
+              </motion.div>
             </div>
 
-            {/* Payment Options */}
-            <PaymentOptions 
-              paymentMethod={paymentMethod}
-              onPaymentMethodChange={setPaymentMethod}
-              total={total}
-            />
+            {/* Right Column - Order Summary */}
+            <div className="lg:col-span-1">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="sticky top-24"
+              >
+                <div className="glassmorphic-card p-6 sm:p-8 rounded-2xl hover:shadow-glow transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-full bg-nitebite-yellow/20 flex items-center justify-center">
+                      <span className="text-nitebite-yellow font-bold text-sm">3</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-nitebite-purple">
+                      Order Summary
+                    </h2>
+                  </div>
 
-            {/* Secure Order Summary */}
-            <div className="glassmorphic-card p-6 rounded-2xl">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-5 h-5 text-green-400" />
-                <h2 className="text-xl font-semibold text-nitebite-highlight">
-                  Secure Order Summary
-                </h2>
-              </div>
+                  <SecureCheckout
+                    onPriceValidated={setPriceValidation}
+                    couponCode={couponCode || undefined}
+                  />
 
-              <SecureCheckout
-                onPriceValidated={setPriceValidation}
-                couponCode={couponCode || undefined}
-              />
+                  {/* Security Badge */}
+                  <div className="mt-6 p-4 bg-nitebite-green/10 border border-nitebite-green/20 rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="w-4 h-4 text-nitebite-green" />
+                      <span className="text-sm font-medium text-nitebite-green">Secure Checkout</span>
+                    </div>
+                    <p className="text-xs text-nitebite-text-muted">
+                      Your payment and personal information are protected with bank-level security.
+                    </p>
+                  </div>
 
-              {/* Fallback display if price validation is not ready */}
-              {!priceValidation && (
-                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <p className="text-yellow-400 text-sm">
-                    ⚠️ Waiting for secure price validation...
-                  </p>
+                  {/* Price Validation Status */}
+                  {!priceValidation && (
+                    <div className="mt-4 p-4 bg-nitebite-yellow/10 border border-nitebite-yellow/20 rounded-xl animate-pulse">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-nitebite-yellow border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-nitebite-yellow text-sm font-medium">
+                          Validating prices securely...
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </motion.div>
             </div>
           </div>
 
           {/* Sticky Checkout Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-nitebite-dark/95 backdrop-blur-md border-t border-white/10 z-40">
-            <div className="max-w-lg mx-auto">
-              <p className="text-xs text-nitebite-text-muted text-center mb-3">
-                {paymentMethod === 'cod'
-                  ? 'Payment will be collected in cash at the time of delivery'
-                  : 'Please complete the payment using the QR code above'}
-              </p>
-              <Button
-                className="w-full glassmorphic-button text-white py-6 text-base rounded-full transition-all duration-300 flex items-center justify-center gap-2 group shadow-glow disabled:opacity-50"
-                onClick={handleCheckout}
-                disabled={isProcessing || !priceValidation?.success}
-              >
-                {isProcessing ? (
-                  'Processing...'
-                ) : !priceValidation?.success ? (
-                  <>
-                    <Shield className="w-5 h-5" />
-                    Validating Prices...
-                  </>
-                ) : (
-                  <>
-                    Place Order
-                    <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                  </>
-                )}
-              </Button>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-nitebite-midnight/95 backdrop-blur-xl border-t border-nitebite-purple/20 z-40"
+          >
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Payment Info */}
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="text-xs sm:text-sm text-nitebite-text-muted mb-1">
+                    {paymentMethod === 'cod'
+                      ? '💰 Cash on Delivery - Pay when your order arrives'
+                      : '📱 UPI Payment - Scan QR code to complete payment'}
+                  </p>
+                  {priceValidation?.success && (
+                    <p className="text-sm font-medium text-nitebite-yellow">
+                      Total: ₹{priceValidation.total.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Checkout Button */}
+                <Button
+                  className="w-full sm:w-auto min-w-[200px] glassmorphic-button text-nitebite-midnight py-4 px-8 text-base font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-3 group shadow-yellow-glow hover:shadow-glow-pulse-yellow disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleCheckout}
+                  disabled={isProcessing || !priceValidation?.success}
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-nitebite-midnight border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : !priceValidation?.success ? (
+                    <>
+                      <Shield className="w-5 h-5 animate-pulse" />
+                      Validating...
+                    </>
+                  ) : (
+                    <>
+                      <span>Place Order</span>
+                      <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </motion.div>

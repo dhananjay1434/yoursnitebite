@@ -67,23 +67,31 @@ class RateLimitingService {
    */
   async checkOrderRateLimit(userId: string): Promise<RateLimitResult> {
     try {
+      // First check if the function exists
       const { data, error } = await supabase.rpc('check_order_rate_limit', {
         p_user_id: userId
       });
 
       if (error) {
-        console.error('Rate limit check failed:', error);
+        console.warn('Rate limit check failed, using fallback:', error.message);
+
+        // If the function doesn't exist, use client-side rate limiting as fallback
+        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
+          console.log('Database rate limiting not available, using client-side fallback');
+          return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
+        }
+
         // Allow request if rate limiting service is down
         return {
           allowed: true,
           currentCount: 0,
           resetTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          message: 'Rate limiting service unavailable'
+          message: 'Rate limiting service temporarily unavailable'
         };
       }
 
       const result = data[0];
-      
+
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Order rate limit exceeded', {
           userId,
@@ -98,19 +106,15 @@ class RateLimitingService {
         currentCount: result.current_count,
         resetTime: result.reset_time,
         blockedUntil: result.blocked_until,
-        message: result.allowed 
-          ? undefined 
+        message: result.allowed
+          ? undefined
           : `Too many orders. Please wait until ${new Date(result.blocked_until || result.reset_time).toLocaleTimeString()}`
       };
 
     } catch (error) {
-      console.error('Rate limit check error:', error);
-      return {
-        allowed: true,
-        currentCount: 0,
-        resetTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        message: 'Rate limiting check failed'
-      };
+      console.warn('Rate limit check error, using fallback:', error);
+      // Use client-side rate limiting as fallback
+      return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
     }
   }
 
@@ -124,7 +128,13 @@ class RateLimitingService {
       });
 
       if (error) {
-        console.error('Login rate limit check failed:', error);
+        console.warn('Login rate limit check failed, using fallback:', error.message);
+
+        // If the function doesn't exist, use client-side rate limiting as fallback
+        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
+          return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
+        }
+
         return {
           allowed: true,
           currentCount: 0,
@@ -133,7 +143,7 @@ class RateLimitingService {
       }
 
       const result = data[0];
-      
+
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Login rate limit exceeded', {
           identifier,
@@ -148,18 +158,14 @@ class RateLimitingService {
         currentCount: result.current_count,
         resetTime: result.reset_time,
         blockedUntil: result.blocked_until,
-        message: result.allowed 
-          ? undefined 
+        message: result.allowed
+          ? undefined
           : `Too many login attempts. Please wait until ${new Date(result.blocked_until || result.reset_time).toLocaleTimeString()}`
       };
 
     } catch (error) {
-      console.error('Login rate limit check error:', error);
-      return {
-        allowed: true,
-        currentCount: 0,
-        resetTime: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-      };
+      console.warn('Login rate limit check error, using fallback:', error);
+      return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
     }
   }
 
@@ -173,7 +179,13 @@ class RateLimitingService {
       });
 
       if (error) {
-        console.error('Coupon rate limit check failed:', error);
+        console.warn('Coupon rate limit check failed, using fallback:', error.message);
+
+        // If the function doesn't exist, use client-side rate limiting as fallback
+        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
+          return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
+        }
+
         return {
           allowed: true,
           currentCount: 0,
@@ -182,7 +194,7 @@ class RateLimitingService {
       }
 
       const result = data[0];
-      
+
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Coupon rate limit exceeded', {
           userId,
@@ -197,18 +209,14 @@ class RateLimitingService {
         currentCount: result.current_count,
         resetTime: result.reset_time,
         blockedUntil: result.blocked_until,
-        message: result.allowed 
-          ? undefined 
+        message: result.allowed
+          ? undefined
           : `Too many coupon attempts. Please wait until ${new Date(result.blocked_until || result.reset_time).toLocaleTimeString()}`
       };
 
     } catch (error) {
-      console.error('Coupon rate limit check error:', error);
-      return {
-        allowed: true,
-        currentCount: 0,
-        resetTime: new Date(Date.now() + 60 * 60 * 1000).toISOString()
-      };
+      console.warn('Coupon rate limit check error, using fallback:', error);
+      return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
     }
   }
 
