@@ -2,10 +2,13 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 
-// Safe price formatting function to prevent toFixed errors
+// Safe price formatting function to prevent toFixed errors - Updated v2
 const formatPrice = (price: number | undefined | null): string => {
-  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
-  return safePrice.toFixed(2);
+  // Multiple safety checks to prevent any toFixed errors
+  if (price === null || price === undefined || typeof price !== 'number' || isNaN(price)) {
+    return '0.00';
+  }
+  return price.toFixed(2);
 };
 
 interface QrPaymentProps {
@@ -69,12 +72,14 @@ const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   onMethodChange,
   totalAmount,
 }) => {
+  // Additional safety check for totalAmount
+  const safeTotalAmount = typeof totalAmount === 'number' && !isNaN(totalAmount) ? totalAmount : 0;
 
   const upiPaymentInfo = {
     pa: 'rajdeep.kumar@fam',
     pn: 'Nitebite',
     tn: 'Order Payment',
-    am: formatPrice(totalAmount),
+    am: formatPrice(safeTotalAmount),
   };
 
   const upiPaymentUrl = `upi://pay?pa=${upiPaymentInfo.pa}&pn=${encodeURIComponent(
@@ -98,7 +103,7 @@ const PaymentOptions: React.FC<PaymentOptionsProps> = ({
         </Button>
       </div>
       {selectedMethod === 'qr' ? (
-        <QrPayment upiPaymentUrl={upiPaymentUrl} totalAmount={totalAmount} />
+        <QrPayment upiPaymentUrl={upiPaymentUrl} totalAmount={safeTotalAmount} />
       ) : (
         <CodPayment />
       )}
