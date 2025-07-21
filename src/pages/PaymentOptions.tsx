@@ -2,13 +2,19 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 
-// Safe price formatting function to prevent toFixed errors - Updated v2
+// Safe price formatting function to prevent toFixed errors - Updated v3 with debugging
 const formatPrice = (price: number | undefined | null): string => {
+  console.log('formatPrice called with:', price, 'type:', typeof price);
+
   // Multiple safety checks to prevent any toFixed errors
   if (price === null || price === undefined || typeof price !== 'number' || isNaN(price)) {
+    console.log('formatPrice returning 0.00 due to invalid input');
     return '0.00';
   }
-  return price.toFixed(2);
+
+  const result = price.toFixed(2);
+  console.log('formatPrice returning:', result);
+  return result;
 };
 
 interface QrPaymentProps {
@@ -72,8 +78,13 @@ const PaymentOptions: React.FC<PaymentOptionsProps> = ({
   onMethodChange,
   totalAmount,
 }) => {
+  // Debug logging to understand the issue
+  console.log('PaymentOptions received totalAmount:', totalAmount, 'type:', typeof totalAmount);
+
   // Additional safety check for totalAmount
   const safeTotalAmount = typeof totalAmount === 'number' && !isNaN(totalAmount) ? totalAmount : 0;
+
+  console.log('PaymentOptions safeTotalAmount:', safeTotalAmount);
 
   const upiPaymentInfo = {
     pa: 'rajdeep.kumar@fam',
