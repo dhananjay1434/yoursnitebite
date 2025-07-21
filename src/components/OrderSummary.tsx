@@ -15,7 +15,7 @@ const OrderSummary = () => {
   // This is critical to avoid infinite re-renders
   const items = useCartStore((state: CartStore) => state.items);
   const updateCouponDiscount = useCartStore((state: CartStore) => state.updateCouponDiscount);
-  const couponDiscount = useCartStore((state: CartStore) => state.couponDiscount);
+  const appliedCouponCode = useCartStore((state: CartStore) => state.couponCode);
 
   // Processing state for the checkout button
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,7 +56,7 @@ const OrderSummary = () => {
     const fetchPrices = async () => {
       try {
         // Get prices from server
-        const result = await calculatePricesOnServer(items, couponDiscount);
+        const result = await calculatePricesOnServer(items, appliedCouponCode || undefined);
         setPriceCalculation(result);
       } catch (error) {
         console.error('Failed to calculate prices:', error);
@@ -66,7 +66,7 @@ const OrderSummary = () => {
     };
 
     fetchPrices();
-  }, [items, couponDiscount]); // Recalculate when items or coupon discount changes
+  }, [items, appliedCouponCode]); // Recalculate when items or coupon code changes
 
   // Function to sanitize input to prevent XSS attacks
   const sanitizeInput = useCallback((input: string): string => {
