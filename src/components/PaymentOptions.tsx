@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
+import { formatPrice } from '@/lib/validation';
 
 interface QrPaymentProps {
   upiPaymentUrl: string;
@@ -22,7 +23,7 @@ const QrPayment: React.FC<QrPaymentProps> = ({ upiPaymentUrl, totalAmount }) => 
       <p className="text-center text-nitebite-text mt-4">
         Scan this QR code with your UPI app to pay&nbsp;
         <span className="font-bold text-nitebite-highlight">
-          ₹{totalAmount.toFixed(2)}
+          ₹{formatPrice(totalAmount)}
         </span>
       </p>
       <button
@@ -68,7 +69,7 @@ const PaymentOptions: React.FC<PaymentOptionsProps> = ({
     pa: 'rajdeep.kumar@fam',
     pn: 'Nitebite',
     tn: 'Order Payment',
-    am: totalAmount.toFixed(2),
+    am: formatPrice(totalAmount),
   };
 
   const upiPaymentUrl = `upi://pay?pa=${upiPaymentInfo.pa}&pn=${encodeURIComponent(

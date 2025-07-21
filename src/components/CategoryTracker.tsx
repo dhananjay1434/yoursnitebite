@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatPrice } from '@/lib/validation';
 
 interface CategoryTrackerProps {
   selectedCategories: string[];
@@ -49,8 +50,8 @@ const CategoryTracker: React.FC<CategoryTrackerProps> = ({
     progressColor = 'text-green-400';
   }
 
-  // Ensure total is a valid number
-  const formattedTotal = total >= 0 ? total.toFixed(2) : '0.00';
+  // Ensure total is a valid number using safe formatting
+  const formattedTotal = formatPrice(total);
 
   return (
     <motion.div
