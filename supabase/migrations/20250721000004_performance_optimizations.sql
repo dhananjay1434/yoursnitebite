@@ -363,7 +363,10 @@ $$;
 
 -- ✅ PERFORMANCE: Optimize existing functions
 
--- Update the stock management function for better performance
+-- Drop and recreate the stock management function with updated return type
+DROP FUNCTION IF EXISTS process_order_with_atomic_stock(uuid, jsonb, jsonb);
+
+-- Create the updated stock management function for better performance
 CREATE OR REPLACE FUNCTION process_order_with_atomic_stock(
   p_user_id uuid,
   p_order_data jsonb,
@@ -375,7 +378,7 @@ RETURNS TABLE (
   message text,
   failed_items jsonb,
   calculated_total decimal
-) 
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$

@@ -172,73 +172,77 @@ GRANT EXECUTE ON FUNCTION log_security_event TO authenticated, anon;
 
 -- ✅ TEMPORARY: Create stub functions for missing RPC calls to prevent errors
 
--- Create stub for calculate_order_total_secure if it doesn't exist
+-- Create stub for calculate_order_total_secure (drop first to avoid conflicts)
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'calculate_order_total_secure') THEN
-    CREATE OR REPLACE FUNCTION calculate_order_total_secure(
-      p_items jsonb,
-      p_coupon_code text DEFAULT NULL
-    )
-    RETURNS TABLE (
-      success boolean,
-      subtotal decimal,
-      delivery_fee decimal,
-      convenience_fee decimal,
-      coupon_discount decimal,
-      total decimal,
-      message text
-    )
-    LANGUAGE plpgsql
-    SECURITY DEFINER
-    AS $func$
-    BEGIN
-      -- Temporary stub - returns basic calculation
-      RETURN QUERY SELECT 
-        true,
-        100.00::decimal,
-        10.00::decimal,
-        6.00::decimal,
-        0.00::decimal,
-        116.00::decimal,
-        'Temporary calculation - please implement full function';
-    END;
-    $func$;
-  END IF;
+  -- Drop existing function if it exists to avoid return type conflicts
+  DROP FUNCTION IF EXISTS calculate_order_total_secure(jsonb, text);
+
+  -- Create the stub function
+  CREATE OR REPLACE FUNCTION calculate_order_total_secure(
+    p_items jsonb,
+    p_coupon_code text DEFAULT NULL
+  )
+  RETURNS TABLE (
+    success boolean,
+    subtotal decimal,
+    delivery_fee decimal,
+    convenience_fee decimal,
+    coupon_discount decimal,
+    total decimal,
+    message text
+  )
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $func$
+  BEGIN
+    -- Temporary stub - returns basic calculation
+    RETURN QUERY SELECT
+      true,
+      100.00::decimal,
+      10.00::decimal,
+      6.00::decimal,
+      0.00::decimal,
+      116.00::decimal,
+      'Temporary calculation - please implement full function';
+  END;
+  $func$;
 END $$;
 
--- Create stub for process_order_with_atomic_stock if it doesn't exist
+-- Create stub for process_order_with_atomic_stock (drop first to avoid conflicts)
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'process_order_with_atomic_stock') THEN
-    CREATE OR REPLACE FUNCTION process_order_with_atomic_stock(
-      p_user_id uuid,
-      p_order_data jsonb,
-      p_items jsonb
-    )
-    RETURNS TABLE (
-      success boolean,
-      order_id uuid,
-      message text,
-      failed_items jsonb,
-      calculated_total decimal
-    )
-    LANGUAGE plpgsql
-    SECURITY DEFINER
-    AS $func$
-    BEGIN
-      -- Temporary stub - logs the attempt and returns failure
-      PERFORM log_application_event('warn', 'order', 'Attempted to use stub order processing function', p_order_data::text);
-      
-      RETURN QUERY SELECT 
-        false,
-        null::uuid,
-        'Order processing temporarily unavailable - please apply all migrations',
-        '[]'::jsonb,
-        0.00::decimal;
-    END;
-    $func$;
-  END IF;
+  -- Drop existing function if it exists to avoid return type conflicts
+  DROP FUNCTION IF EXISTS process_order_with_atomic_stock(uuid, jsonb, jsonb);
+
+  -- Create the stub function
+  CREATE OR REPLACE FUNCTION process_order_with_atomic_stock(
+    p_user_id uuid,
+    p_order_data jsonb,
+    p_items jsonb
+  )
+  RETURNS TABLE (
+    success boolean,
+    order_id uuid,
+    message text,
+    failed_items jsonb,
+    calculated_total decimal
+  )
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $func$
+  BEGIN
+    -- Temporary stub - logs the attempt and returns failure
+    PERFORM log_application_event('warn', 'order', 'Attempted to use stub order processing function', p_order_data::text);
+
+    RETURN QUERY SELECT
+      false,
+      null::uuid,
+      'Order processing temporarily unavailable - please apply all migrations',
+      '[]'::jsonb,
+      0.00::decimal;
+  END;
+  $func$;
 END $$;
 
 -- Grant permissions for stub functions
