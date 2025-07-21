@@ -2,7 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatPrice } from '@/lib/validation';
+
+// Safe price formatting function to prevent toFixed errors
+const formatPrice = (price: number | undefined | null): string => {
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+  return safePrice.toFixed(2);
+};
 
 interface CategoryTrackerProps {
   selectedCategories: string[];

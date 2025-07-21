@@ -1,7 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
-import { formatPrice } from '@/lib/validation';
+
+// Safe price formatting function to prevent toFixed errors
+const formatPrice = (price: number | undefined | null): string => {
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+  return safePrice.toFixed(2);
+};
 
 interface QrPaymentProps {
   upiPaymentUrl: string;

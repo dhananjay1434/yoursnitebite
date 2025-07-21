@@ -9,7 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import { useCoupon } from '@/hooks/use-coupon';
 import { calculatePricesOnServer, PriceCalculationResult } from '@/services/priceCalculation';
 import { throttledExecution, formatTimeRemaining } from '@/utils/requestThrottling';
-import { formatPrice } from '@/lib/validation';
+
+// Safe price formatting function to prevent toFixed errors
+const formatPrice = (price: number | undefined | null): string => {
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+  return safePrice.toFixed(2);
+};
 
 const OrderSummary = () => {
   // We need to access the store without creating a selector function inside the component
