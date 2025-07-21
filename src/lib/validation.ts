@@ -314,20 +314,31 @@ export function validateFileUpload(file: File): {
 } {
   const maxSize = 5 * 1024 * 1024; // 5MB
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  
+
   if (file.size > maxSize) {
     return {
       isValid: false,
       error: 'File size must be less than 5MB',
     };
   }
-  
+
   if (!allowedTypes.includes(file.type)) {
     return {
       isValid: false,
       error: 'Only JPEG, PNG, and WebP images are allowed',
     };
   }
-  
+
   return { isValid: true };
+}
+
+// ✅ SECURE: Safe price formatting to prevent toFixed errors
+export function formatPrice(price: number | undefined | null): string {
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+  return safePrice.toFixed(2);
+}
+
+// ✅ SECURE: Safe price formatting with currency symbol
+export function formatCurrency(price: number | undefined | null): string {
+  return `₹${formatPrice(price)}`;
 }
