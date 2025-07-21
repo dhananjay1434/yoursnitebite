@@ -10,22 +10,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import PaymentOptions from './PaymentOptions';
 import { supabase } from '@/lib/supabase';
-import { 
-  processOrderSecurely, 
-  validateOrderData, 
-  recordCouponUsage, 
-  updateUserProfile 
+import {
+  processOrderSecurely,
+  validateOrderData,
+  recordCouponUsage,
+  updateUserProfile,
+  validatePricesSecurely,
+  PriceValidationResult
 } from '@/services/secureOrderProcessing';
+import SecureCheckout from '@/components/SecureCheckout';
 
 const SecureOrderDetails = () => {
   const navigate = useNavigate();
-  const { items, calculateSubtotal, clearCart, couponDiscount } = useCartStore();
+  const { items, calculateSubtotal, clearCart, couponDiscount, couponCode } = useCartStore();
 
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [hostelNumber, setHostelNumber] = useState('');
@@ -34,6 +37,7 @@ const SecureOrderDetails = () => {
   const [customerName, setCustomerName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'qr'|'cod'>('qr');
+  const [priceValidation, setPriceValidation] = useState<PriceValidationResult | null>(null);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -87,9 +91,16 @@ const SecureOrderDetails = () => {
         return;
       }
 
-      // 2. Prepare order data
+      // 2. ✅ SECURE: Validate prices server-side first
+      if (!priceValidation || !priceValidation.success) {
+        toast.error('Please wait for price validation to complete');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 3. Prepare order data with server-validated total
       const orderData = {
-        amount: total,
+        amount: priceValidation.total, // Use server-calculated total
         phone_number: whatsappNumber,
         hostel_number: hostelNumber,
         room_number: roomNumber,
@@ -97,10 +108,10 @@ const SecureOrderDetails = () => {
         customer_name: customerName,
         payment_method: paymentMethod,
         payment_status: 'pending',
-        coupon_discount: couponDiscount ? Math.min(couponDiscount, subtotal) : 0,
+        coupon_discount: priceValidation.coupon_discount, // Use server-calculated discount
       };
 
-      // 3. Validate order data
+      // 4. Validate order data
       const validation = validateOrderData(orderData, items);
       if (!validation.isValid) {
         validation.errors.forEach(error => toast.error(error));
@@ -108,7 +119,7 @@ const SecureOrderDetails = () => {
         return;
       }
 
-      // 4. ✅ SECURE: Process order with atomic stock management
+      // 5. ✅ SECURE: Process order with atomic stock management and price validation
       const result = await processOrderSecurely(user.id, orderData, items);
 
       if (!result.success) {
@@ -266,37 +277,28 @@ const SecureOrderDetails = () => {
               total={total}
             />
 
-            {/* Order Summary */}
+            {/* Secure Order Summary */}
             <div className="glassmorphic-card p-6 rounded-2xl">
-              <h2 className="text-xl font-semibold text-nitebite-highlight mb-4">
-                Order Summary
-              </h2>
-              <div className="space-y-2 text-nitebite-text">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Delivery Fee</span>
-                  <span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Convenience Fee</span>
-                  <span>₹{convenienceFee.toFixed(2)}</span>
-                </div>
-                {appliedDiscount > 0 && (
-                  <div className="flex justify-between text-green-400">
-                    <span>Discount</span>
-                    <span>-₹{appliedDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="border-t border-white/10 pt-2 mt-2">
-                  <div className="flex justify-between font-semibold text-nitebite-highlight">
-                    <span>Total</span>
-                    <span>₹{total.toFixed(2)}</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="w-5 h-5 text-green-400" />
+                <h2 className="text-xl font-semibold text-nitebite-highlight">
+                  Secure Order Summary
+                </h2>
               </div>
+
+              <SecureCheckout
+                onPriceValidated={setPriceValidation}
+                couponCode={couponCode || undefined}
+              />
+
+              {/* Fallback display if price validation is not ready */}
+              {!priceValidation && (
+                <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <p className="text-yellow-400 text-sm">
+                    ⚠️ Waiting for secure price validation...
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -309,12 +311,23 @@ const SecureOrderDetails = () => {
                   : 'Please complete the payment using the QR code above'}
               </p>
               <Button
-                className="w-full glassmorphic-button text-white py-6 text-base rounded-full transition-all duration-300 flex items-center justify-center gap-2 group shadow-glow"
+                className="w-full glassmorphic-button text-white py-6 text-base rounded-full transition-all duration-300 flex items-center justify-center gap-2 group shadow-glow disabled:opacity-50"
                 onClick={handleCheckout}
-                disabled={isProcessing}
+                disabled={isProcessing || !priceValidation?.success}
               >
-                {isProcessing ? 'Processing...' : 'Place Order'}
-                <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                {isProcessing ? (
+                  'Processing...'
+                ) : !priceValidation?.success ? (
+                  <>
+                    <Shield className="w-5 h-5" />
+                    Validating Prices...
+                  </>
+                ) : (
+                  <>
+                    Place Order
+                    <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                  </>
+                )}
               </Button>
             </div>
           </div>

@@ -196,6 +196,8 @@ export function validateSearch(data: unknown) {
 
 // ✅ SECURE: Sanitization functions
 export function sanitizeHtml(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+
   return input
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -204,11 +206,40 @@ export function sanitizeHtml(input: string): string {
     .replace(/\//g, '&#x2F;');
 }
 
-export function sanitizeForDatabase(input: string): string {
-  // Remove potential SQL injection patterns
-  return input
-    .replace(/['"`;\\]/g, '')
-    .trim();
+export function sanitizeForDatabase(input: any): any {
+  // Handle null/undefined
+  if (input === null || input === undefined) {
+    return input;
+  }
+
+  if (typeof input === 'string') {
+    // Remove potential SQL injection patterns
+    return input
+      .replace(/['"`;\\]/g, '')
+      .trim();
+  }
+
+  if (typeof input === 'number') {
+    return isFinite(input) ? input : 0;
+  }
+
+  if (typeof input === 'boolean') {
+    return input;
+  }
+
+  if (Array.isArray(input)) {
+    return input.map(sanitizeForDatabase);
+  }
+
+  if (typeof input === 'object' && input !== null) {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(input)) {
+      sanitized[key] = sanitizeForDatabase(value);
+    }
+    return sanitized;
+  }
+
+  return input;
 }
 
 export function sanitizePhoneNumber(phone: string): string {

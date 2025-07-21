@@ -55,16 +55,25 @@ export interface PriceValidationResult {
 
 /**
  * ✅ SECURE: Validate prices server-side to prevent manipulation
+ * This function calls the database to calculate prices using actual product data,
+ * preventing client-side price manipulation attacks.
  */
 export async function validatePricesSecurely(
   cartItems: CartItem[],
   couponCode?: string
 ): Promise<PriceValidationResult> {
   try {
+    // Log price validation attempt for security monitoring
+    await logger.info(LogCategory.SECURITY, 'Price validation requested', {
+      itemCount: cartItems.length,
+      couponCode: couponCode ? 'provided' : 'none',
+      clientTotal: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    });
+
     const orderItems = cartItems.map(item => ({
       product_id: item.id,
       name: item.name,
-      price: item.price, // This will be ignored by server
+      price: item.price, // This will be ignored by server - using DB prices
       quantity: item.quantity,
     }));
 
@@ -74,7 +83,12 @@ export async function validatePricesSecurely(
     });
 
     if (error) {
-      console.error('Price validation error:', error);
+      await logger.error(LogCategory.SECURITY, 'Price validation failed', {
+        error: error.message,
+        items: orderItems,
+        couponCode
+      });
+
       return {
         success: false,
         subtotal: 0,
@@ -82,11 +96,17 @@ export async function validatePricesSecurely(
         convenience_fee: 0,
         coupon_discount: 0,
         total: 0,
-        message: 'Failed to validate prices',
+        message: 'Failed to validate prices. Please try again.',
       };
     }
 
     if (!result || !result[0]?.success) {
+      await logger.warn(LogCategory.SECURITY, 'Price validation returned failure', {
+        result: result?.[0],
+        items: orderItems,
+        couponCode
+      });
+
       return {
         success: false,
         subtotal: 0,
@@ -97,6 +117,13 @@ export async function validatePricesSecurely(
         message: result?.[0]?.message || 'Price validation failed',
       };
     }
+
+    // Log successful price validation
+    await logger.info(LogCategory.SECURITY, 'Price validation successful', {
+      serverTotal: result[0].total,
+      couponDiscount: result[0].coupon_discount,
+      itemCount: orderItems.length
+    });
 
     return {
       success: true,

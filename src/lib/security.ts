@@ -85,39 +85,48 @@ export function escapeHtml(unsafe: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// ✅ SECURE: Content Security Policy
+// ✅ SECURE: Content Security Policy (Client-side fallback only)
 export function setSecurityHeaders(): void {
-  // Set Content Security Policy
-  const meta = document.createElement('meta');
-  meta.httpEquiv = 'Content-Security-Policy';
-  meta.content = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Note: In production, remove unsafe-inline and unsafe-eval
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ');
-  
-  document.head.appendChild(meta);
+  // ⚠️ NOTE: These meta tags are fallbacks only.
+  // Proper security headers should be set by your web server/CDN
 
-  // Set other security headers via meta tags
-  const headers = [
-    { name: 'X-Content-Type-Options', content: 'nosniff' },
-    { name: 'X-Frame-Options', content: 'DENY' },
-    { name: 'X-XSS-Protection', content: '1; mode=block' },
-    { name: 'Referrer-Policy', content: 'strict-origin-when-cross-origin' },
-  ];
+  // Only set CSP via meta if not already set by server
+  if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      "base-uri 'self'",
+      "form-action 'self'"
+    ].join('; ');
 
-  headers.forEach(header => {
-    const metaTag = document.createElement('meta');
-    metaTag.httpEquiv = header.name;
-    metaTag.content = header.content;
-    document.head.appendChild(metaTag);
-  });
+    document.head.appendChild(meta);
+  }
+
+  // ⚠️ WARNING: X-Frame-Options and frame-ancestors cannot be set via meta tags
+  // These must be set by your web server. The browser will ignore them here.
+
+  // Only set other headers if not in production or for development
+  if (import.meta.env.DEV) {
+    const headers = [
+      { name: 'X-Content-Type-Options', content: 'nosniff' },
+      { name: 'Referrer-Policy', content: 'strict-origin-when-cross-origin' },
+    ];
+
+    headers.forEach(header => {
+      if (!document.querySelector(`meta[http-equiv="${header.name}"]`)) {
+        const metaTag = document.createElement('meta');
+        metaTag.httpEquiv = header.name;
+        metaTag.content = header.content;
+        document.head.appendChild(metaTag);
+      }
+    });
+  }
 }
 
 // ✅ SECURE: Secure Request Wrapper
@@ -171,21 +180,30 @@ export async function secureRequest<T>(
 
 // ✅ SECURE: Input Sanitization for Database
 export function sanitizeForDatabase(input: any): any {
+  // Handle null/undefined
+  if (input === null || input === undefined) {
+    return input;
+  }
+
   if (typeof input === 'string') {
     return input
       .trim()
       .replace(/[<>]/g, '') // Remove potential HTML tags
       .slice(0, 1000); // Limit length
   }
-  
+
   if (typeof input === 'number') {
     return isFinite(input) ? input : 0;
   }
-  
+
+  if (typeof input === 'boolean') {
+    return input;
+  }
+
   if (Array.isArray(input)) {
     return input.map(sanitizeForDatabase);
   }
-  
+
   if (typeof input === 'object' && input !== null) {
     const sanitized: any = {};
     for (const [key, value] of Object.entries(input)) {
@@ -193,7 +211,7 @@ export function sanitizeForDatabase(input: any): any {
     }
     return sanitized;
   }
-  
+
   return input;
 }
 

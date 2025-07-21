@@ -1,0 +1,53 @@
+# Security Headers for Nitebite eCommerce Platform
+# These headers fix the console warnings and provide proper security
+
+/*
+  # Security Headers
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  
+  # Content Security Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  
+  # Permissions Policy
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  
+  # HSTS (if using HTTPS)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  
+  # Cache Control for security
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# Static Assets - Allow caching
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images - Allow caching
+/*.png
+  Cache-Control: public, max-age=31536000
+/*.jpg
+  Cache-Control: public, max-age=31536000
+/*.jpeg
+  Cache-Control: public, max-age=31536000
+/*.webp
+  Cache-Control: public, max-age=31536000
+/*.svg
+  Cache-Control: public, max-age=31536000
+
+# Fonts - Allow caching
+/*.woff
+  Cache-Control: public, max-age=31536000
+/*.woff2
+  Cache-Control: public, max-age=31536000
+/*.ttf
+  Cache-Control: public, max-age=31536000
+
+# API Routes - No caching
+/api/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0

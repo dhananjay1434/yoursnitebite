@@ -37,96 +37,136 @@ ALTER TABLE application_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE performance_metrics ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for logging tables (allow all inserts for logging)
-DROP POLICY IF EXISTS "System can insert application logs" ON application_logs;
-CREATE POLICY "System can insert application logs"
-  ON application_logs
-  FOR INSERT
-  TO authenticated, anon
-  WITH CHECK (true);
+-- Use safer approach to handle existing policies
+DO $$
+BEGIN
+  -- Check and drop existing policies if they exist
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+    AND tablename = 'application_logs'
+    AND policyname = 'System can insert application logs'
+  ) THEN
+    DROP POLICY "System can insert application logs" ON application_logs;
+  END IF;
 
-DROP POLICY IF EXISTS "System can insert performance metrics" ON performance_metrics;
-CREATE POLICY "System can insert performance metrics"
-  ON performance_metrics
-  FOR INSERT
-  TO authenticated, anon
-  WITH CHECK (true);
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+    AND tablename = 'performance_metrics'
+    AND policyname = 'System can insert performance metrics'
+  ) THEN
+    DROP POLICY "System can insert performance metrics" ON performance_metrics;
+  END IF;
+
+  -- Create new policies
+  CREATE POLICY "System can insert application logs"
+    ON application_logs
+    FOR INSERT
+    TO authenticated, anon
+    WITH CHECK (true);
+
+  CREATE POLICY "System can insert performance metrics"
+    ON performance_metrics
+    FOR INSERT
+    TO authenticated, anon
+    WITH CHECK (true);
+
+EXCEPTION WHEN OTHERS THEN
+  -- Log the error but continue
+  RAISE NOTICE 'Policy creation warning: %', SQLERRM;
+END $$;
 
 -- ✅ SIMPLIFIED: Create logging function with correct parameter order
-CREATE OR REPLACE FUNCTION log_application_event(
-  p_level text,
-  p_category text,
-  p_message text,
-  p_details text DEFAULT NULL,
-  p_user_id uuid DEFAULT NULL,
-  p_session_id text DEFAULT NULL,
-  p_request_id text DEFAULT NULL,
-  p_user_agent text DEFAULT NULL,
-  p_stack_trace text DEFAULT NULL
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+DO $$
 BEGIN
-  INSERT INTO application_logs (
-    level,
-    category,
-    message,
-    details,
-    user_id,
-    session_id,
-    request_id,
-    user_agent,
-    stack_trace
+  -- Drop existing function if it exists to avoid conflicts
+  DROP FUNCTION IF EXISTS log_application_event(text, text, text, text, uuid, text, text, text, text);
+
+  -- Create the logging function
+  CREATE OR REPLACE FUNCTION log_application_event(
+    p_level text,
+    p_category text,
+    p_message text,
+    p_details text DEFAULT NULL,
+    p_user_id uuid DEFAULT NULL,
+    p_session_id text DEFAULT NULL,
+    p_request_id text DEFAULT NULL,
+    p_user_agent text DEFAULT NULL,
+    p_stack_trace text DEFAULT NULL
   )
-  VALUES (
-    p_level,
-    p_category,
-    p_message,
-    CASE WHEN p_details IS NOT NULL THEN p_details::jsonb ELSE NULL END,
-    COALESCE(p_user_id, auth.uid()),
-    p_session_id,
-    p_request_id,
-    p_user_agent,
-    p_stack_trace
-  );
-EXCEPTION WHEN OTHERS THEN
-  -- Don't fail the main operation if logging fails
-  NULL;
-END;
-$$;
+  RETURNS void
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $func$
+  BEGIN
+    INSERT INTO application_logs (
+      level,
+      category,
+      message,
+      details,
+      user_id,
+      session_id,
+      request_id,
+      user_agent,
+      stack_trace
+    )
+    VALUES (
+      p_level,
+      p_category,
+      p_message,
+      CASE WHEN p_details IS NOT NULL THEN p_details::jsonb ELSE NULL END,
+      COALESCE(p_user_id, auth.uid()),
+      p_session_id,
+      p_request_id,
+      p_user_agent,
+      p_stack_trace
+    );
+  EXCEPTION WHEN OTHERS THEN
+    -- Don't fail the main operation if logging fails
+    NULL;
+  END;
+  $func$;
+END $$;
 
 -- ✅ SIMPLIFIED: Create performance logging function
-CREATE OR REPLACE FUNCTION log_performance_metric(
-  p_name text,
-  p_duration integer,
-  p_category text,
-  p_details text DEFAULT NULL
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+DO $$
 BEGIN
-  INSERT INTO performance_metrics (
-    name,
-    duration,
-    category,
-    details,
-    user_id
+  -- Drop existing function if it exists
+  DROP FUNCTION IF EXISTS log_performance_metric(text, integer, text, text);
+
+  -- Create the performance logging function
+  CREATE OR REPLACE FUNCTION log_performance_metric(
+    p_name text,
+    p_duration integer,
+    p_category text,
+    p_details text DEFAULT NULL
   )
-  VALUES (
-    p_name,
-    p_duration,
-    p_category,
-    CASE WHEN p_details IS NOT NULL THEN p_details::jsonb ELSE NULL END,
-    auth.uid()
-  );
-EXCEPTION WHEN OTHERS THEN
-  -- Don't fail the main operation if logging fails
-  NULL;
-END;
-$$;
+  RETURNS void
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $func$
+  BEGIN
+    INSERT INTO performance_metrics (
+      name,
+      duration,
+      category,
+      details,
+      user_id
+    )
+    VALUES (
+      p_name,
+      p_duration,
+      p_category,
+      CASE WHEN p_details IS NOT NULL THEN p_details::jsonb ELSE NULL END,
+      auth.uid()
+    );
+  EXCEPTION WHEN OTHERS THEN
+    -- Don't fail the main operation if logging fails
+    NULL;
+  END;
+  $func$;
+END $$;
 
 -- ✅ SIMPLIFIED: Create basic security logging function
 CREATE OR REPLACE FUNCTION log_security_event(

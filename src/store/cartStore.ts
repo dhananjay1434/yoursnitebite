@@ -168,6 +168,13 @@ export const useCartStore = create<CartStore>()(
       couponCode: null,
 
       addItem: (item) => {
+        // ✅ SECURE: Validate required fields first
+        if (!item || !item.id || !item.name || typeof item.price !== 'number') {
+          console.error('Cart item validation failed: Missing required fields', item);
+          toast.error('Invalid item: Missing required information', toastOptions);
+          return;
+        }
+
         // ✅ SECURE: Validate input with Zod schema
         const validation = validateCartItem({
           id: item.id,
