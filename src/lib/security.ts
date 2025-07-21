@@ -87,11 +87,11 @@ export function escapeHtml(unsafe: string): string {
 
 // ✅ SECURE: Content Security Policy (Client-side fallback only)
 export function setSecurityHeaders(): void {
-  // ⚠️ NOTE: These meta tags are fallbacks only.
-  // Proper security headers should be set by your web server/CDN
+  // ⚠️ NOTE: Security headers should be set by your web server/CDN for production.
+  // This function only sets CSP via meta tag as a development fallback.
 
-  // Only set CSP via meta if not already set by server
-  if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+  // Only set CSP via meta if not already set by server and in development
+  if (import.meta.env.DEV && !document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
     const meta = document.createElement('meta');
     meta.httpEquiv = 'Content-Security-Policy';
     meta.content = [
@@ -106,14 +106,16 @@ export function setSecurityHeaders(): void {
     ].join('; ');
 
     document.head.appendChild(meta);
+    console.log('✅ Development CSP meta tag set');
   }
 
-  // ⚠️ NOTE: X-Frame-Options, X-Content-Type-Options, and Referrer-Policy
-  // should be set by your web server/CDN, not via meta tags.
-  // Meta tags for these headers are ignored by browsers and will show warnings.
+  // ⚠️ IMPORTANT: X-Frame-Options, X-Content-Type-Options, and Referrer-Policy
+  // MUST be set by your web server/CDN. Meta tags for these headers are
+  // ignored by browsers and will show console warnings.
 
-  // For development, we'll skip setting these via meta tags to avoid console warnings
-  console.log('✅ CSP security headers initialized (server headers recommended for production)');
+  if (import.meta.env.PROD) {
+    console.log('✅ Production mode: Security headers should be set by server/CDN');
+  }
 }
 
 // ✅ SECURE: Secure Request Wrapper

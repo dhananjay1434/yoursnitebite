@@ -34,16 +34,22 @@ const OrderSummary = () => {
     remainingForFreeDelivery: 149
   });
 
-  // Destructure values from price calculation
+  // Destructure values from price calculation with safe defaults
   const {
-    subtotal,
-    freeDeliveryThreshold,
-    remainingForFreeDelivery,
-    deliveryFee,
-    convenienceFee,
-    appliedDiscount,
-    total
+    subtotal = 0,
+    freeDeliveryThreshold = 149,
+    remainingForFreeDelivery = 149,
+    deliveryFee = 0,
+    convenienceFee = 0,
+    appliedDiscount = 0,
+    total = 0
   } = priceCalculation;
+
+  // Safe formatting function to prevent toFixed errors
+  const formatPrice = (price: number | undefined | null): string => {
+    const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+    return safePrice.toFixed(2);
+  };
 
   // Effect to fetch price calculations from server
   useEffect(() => {
@@ -125,9 +131,9 @@ const OrderSummary = () => {
 
           // Only update if we got a valid discount amount back
           if (discountAmount !== null && typeof discountAmount === 'number') {
-            updateCouponDiscount(discountAmount, sanitizedCode);
+            updateCouponDiscount(discountAmount, sanitizedCode as string);
             setCouponCode(''); // Clear the input after successful application
-            setCouponSuccess(`Coupon applied! You saved ₹${discountAmount.toFixed(2)}`);
+            setCouponSuccess(`Coupon applied! You saved ₹${formatPrice(discountAmount)}`);
           }
           return true;
         } catch (error) {
@@ -180,7 +186,7 @@ const OrderSummary = () => {
       <div className="space-y-3 mb-6">
         <div className="flex justify-between text-nitebite-text">
           <span>Subtotal</span>
-          <span>₹{subtotal.toFixed(2)}</span>
+          <span>₹{formatPrice(subtotal)}</span>
         </div>
 
         <div className="flex justify-between text-nitebite-text">
@@ -188,19 +194,19 @@ const OrderSummary = () => {
           <span>{deliveryFee === 0 ? (
             <span className="text-green-400">Free!</span>
           ) : (
-            `₹${deliveryFee.toFixed(2)}`
+            `₹${formatPrice(deliveryFee)}`
           )}</span>
         </div>
 
         <div className="flex justify-between text-nitebite-text">
           <span>Convenience Fee</span>
-          <span>₹{convenienceFee.toFixed(2)}</span>
+          <span>₹{formatPrice(convenienceFee)}</span>
         </div>
 
         {appliedDiscount > 0 && (
           <div className="flex justify-between text-green-400">
             <span>Discount</span>
-            <span>-₹{appliedDiscount.toFixed(2)}</span>
+            <span>-₹{formatPrice(appliedDiscount)}</span>
           </div>
         )}
 
@@ -208,13 +214,13 @@ const OrderSummary = () => {
 
         <div className="flex justify-between font-medium text-nitebite-highlight">
           <span>Total</span>
-          <span>₹{total.toFixed(2)}</span>
+          <span>₹{formatPrice(total)}</span>
         </div>
       </div>
 
       {subtotal < freeDeliveryThreshold && subtotal > 0 && (
         <p className="text-sm text-amber-300 text-center mb-4">
-          Add just ₹{remainingForFreeDelivery.toFixed(2)} more for free delivery!
+          Add just ₹{formatPrice(remainingForFreeDelivery)} more for free delivery!
         </p>
       )}
 
