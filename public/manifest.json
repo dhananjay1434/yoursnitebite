@@ -1,0 +1,46 @@
+{
+  "name": "Nitebite - Late Night Delivery",
+  "short_name": "Nitebite",
+  "description": "Order snacks, beverages, and essentials for late-night delivery in just 10 minutes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#38BDF8",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["food", "delivery", "shopping"],
+  "shortcuts": [
+    {
+      "name": "Order Now",
+      "url": "/products",
+      "description": "Browse and order items"
+    },
+    {
+      "name": "View Cart",
+      "url": "/checkout",
+      "description": "View your cart and checkout"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}
