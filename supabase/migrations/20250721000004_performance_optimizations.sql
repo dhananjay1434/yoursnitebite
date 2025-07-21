@@ -13,12 +13,29 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at_desc ON orders(created_at DESC)
 CREATE INDEX IF NOT EXISTS idx_orders_payment_method ON orders(payment_method);
 CREATE INDEX IF NOT EXISTS idx_orders_amount ON orders(amount);
 
--- Products table indexes
-CREATE INDEX IF NOT EXISTS idx_products_category_featured ON products(category_id, is_featured);
-CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
-CREATE INDEX IF NOT EXISTS idx_products_stock_active ON products(stock_quantity) WHERE stock_quantity > 0;
-CREATE INDEX IF NOT EXISTS idx_products_name_search ON products USING gin(to_tsvector('english', name));
-CREATE INDEX IF NOT EXISTS idx_products_description_search ON products USING gin(to_tsvector('english', description));
+-- Products table indexes (with column existence checks)
+DO $$
+BEGIN
+  -- Basic indexes that should always work
+  CREATE INDEX IF NOT EXISTS idx_products_stock_active ON products(stock_quantity) WHERE stock_quantity > 0;
+
+  -- Check if columns exist before creating indexes
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'category_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_products_category_featured ON products(category_id, is_featured);
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'price') THEN
+    CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'name') THEN
+    CREATE INDEX IF NOT EXISTS idx_products_name_search ON products USING gin(to_tsvector('english', name));
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'description') THEN
+    CREATE INDEX IF NOT EXISTS idx_products_description_search ON products USING gin(to_tsvector('english', description));
+  END IF;
+END $$;
 
 -- Categories table indexes
 CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
@@ -47,34 +64,54 @@ END $$;
 
 -- ✅ PERFORMANCE: Optimize frequently used queries with materialized views
 
--- Create materialized view for product catalog with category info
-CREATE MATERIALIZED VIEW IF NOT EXISTS product_catalog AS
-SELECT 
-  p.id,
-  p.name,
-  p.description,
-  p.price,
-  p.image_url,
-  p.is_featured,
-  p.stock_quantity,
-  p.created_at,
-  p.updated_at,
-  c.name as category_name,
-  c.icon as category_icon,
-  c.id as category_id,
-  CASE 
-    WHEN p.stock_quantity > 0 THEN 'in_stock'
-    WHEN p.stock_quantity = 0 THEN 'out_of_stock'
-    ELSE 'discontinued'
-  END as stock_status
-FROM products p
-JOIN categories c ON p.category_id = c.id
-WHERE p.stock_quantity >= 0;
+-- Create materialized view for product catalog with category info (with safety checks)
+DO $$
+BEGIN
+  -- Only create materialized view if both tables exist with required columns
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'products')
+     AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'categories')
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'name')
+     AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'name') THEN
 
--- Create unique index on materialized view
-CREATE UNIQUE INDEX IF NOT EXISTS idx_product_catalog_id ON product_catalog(id);
-CREATE INDEX IF NOT EXISTS idx_product_catalog_category ON product_catalog(category_id, is_featured);
-CREATE INDEX IF NOT EXISTS idx_product_catalog_stock_status ON product_catalog(stock_status);
+    -- Drop existing view if it exists
+    DROP MATERIALIZED VIEW IF EXISTS product_catalog;
+
+    -- Create the materialized view
+    CREATE MATERIALIZED VIEW product_catalog AS
+    SELECT
+      p.id,
+      p.name,
+      COALESCE(p.description, '') as description,
+      p.price,
+      COALESCE(p.image_url, '') as image_url,
+      COALESCE(p.is_featured, false) as is_featured,
+      COALESCE(p.stock_quantity, 0) as stock_quantity,
+      p.created_at,
+      p.updated_at,
+      COALESCE(c.name, 'Unknown') as category_name,
+      COALESCE(c.icon, '') as category_icon,
+      c.id as category_id,
+      CASE
+        WHEN COALESCE(p.stock_quantity, 0) > 0 THEN 'in_stock'
+        WHEN COALESCE(p.stock_quantity, 0) = 0 THEN 'out_of_stock'
+        ELSE 'discontinued'
+      END as stock_status
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE COALESCE(p.stock_quantity, 0) >= 0;
+  END IF;
+END $$;
+
+-- Create indexes and functions for materialized view (only if it exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'product_catalog') THEN
+    -- Create unique index on materialized view
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_product_catalog_id ON product_catalog(id);
+    CREATE INDEX IF NOT EXISTS idx_product_catalog_category ON product_catalog(category_id, is_featured);
+    CREATE INDEX IF NOT EXISTS idx_product_catalog_stock_status ON product_catalog(stock_status);
+  END IF;
+END $$;
 
 -- Create function to refresh product catalog
 CREATE OR REPLACE FUNCTION refresh_product_catalog()
@@ -83,7 +120,10 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY product_catalog;
+  -- Only refresh if the materialized view exists
+  IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'product_catalog') THEN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY product_catalog;
+  END IF;
 END;
 $$;
 
@@ -112,7 +152,7 @@ CREATE TRIGGER trigger_categories_refresh_catalog
 
 -- ✅ PERFORMANCE: Create optimized functions for common queries
 
--- Fast product search function
+-- Fast product search function (with fallback to direct table query)
 CREATE OR REPLACE FUNCTION search_products(
   search_term text DEFAULT NULL,
   category_filter uuid DEFAULT NULL,
@@ -138,32 +178,69 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 BEGIN
-  RETURN QUERY
-  SELECT 
-    pc.id,
-    pc.name,
-    pc.description,
-    pc.price,
-    pc.image_url,
-    pc.is_featured,
-    pc.stock_quantity,
-    pc.category_name,
-    pc.category_icon,
-    pc.stock_status
-  FROM product_catalog pc
-  WHERE 
-    (search_term IS NULL OR 
-     pc.name ILIKE '%' || search_term || '%' OR 
-     pc.description ILIKE '%' || search_term || '%')
-    AND (category_filter IS NULL OR pc.category_id = category_filter)
-    AND (min_price IS NULL OR pc.price >= min_price)
-    AND (max_price IS NULL OR pc.price <= max_price)
-    AND (NOT in_stock_only OR pc.stock_status = 'in_stock')
-  ORDER BY 
-    pc.is_featured DESC,
-    pc.name ASC
-  LIMIT limit_count
-  OFFSET offset_count;
+  -- Check if materialized view exists, use it if available
+  IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'product_catalog') THEN
+    RETURN QUERY
+    SELECT
+      pc.id,
+      pc.name,
+      pc.description,
+      pc.price,
+      pc.image_url,
+      pc.is_featured,
+      pc.stock_quantity,
+      pc.category_name,
+      pc.category_icon,
+      pc.stock_status
+    FROM product_catalog pc
+    WHERE
+      (search_term IS NULL OR
+       pc.name ILIKE '%' || search_term || '%' OR
+       pc.description ILIKE '%' || search_term || '%')
+      AND (category_filter IS NULL OR pc.category_id = category_filter)
+      AND (min_price IS NULL OR pc.price >= min_price)
+      AND (max_price IS NULL OR pc.price <= max_price)
+      AND (NOT in_stock_only OR pc.stock_status = 'in_stock')
+    ORDER BY
+      pc.is_featured DESC,
+      pc.name ASC
+    LIMIT limit_count
+    OFFSET offset_count;
+  ELSE
+    -- Fallback to direct table query if materialized view doesn't exist
+    RETURN QUERY
+    SELECT
+      p.id,
+      COALESCE(p.name, '') as name,
+      COALESCE(p.description, '') as description,
+      COALESCE(p.price, 0) as price,
+      COALESCE(p.image_url, '') as image_url,
+      COALESCE(p.is_featured, false) as is_featured,
+      COALESCE(p.stock_quantity, 0) as stock_quantity,
+      COALESCE(c.name, 'Unknown') as category_name,
+      COALESCE(c.icon, '') as category_icon,
+      CASE
+        WHEN COALESCE(p.stock_quantity, 0) > 0 THEN 'in_stock'
+        WHEN COALESCE(p.stock_quantity, 0) = 0 THEN 'out_of_stock'
+        ELSE 'discontinued'
+      END as stock_status
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE
+      (search_term IS NULL OR
+       COALESCE(p.name, '') ILIKE '%' || search_term || '%' OR
+       COALESCE(p.description, '') ILIKE '%' || search_term || '%')
+      AND (category_filter IS NULL OR p.category_id = category_filter)
+      AND (min_price IS NULL OR COALESCE(p.price, 0) >= min_price)
+      AND (max_price IS NULL OR COALESCE(p.price, 0) <= max_price)
+      AND (NOT in_stock_only OR COALESCE(p.stock_quantity, 0) > 0)
+      AND COALESCE(p.stock_quantity, 0) >= 0
+    ORDER BY
+      COALESCE(p.is_featured, false) DESC,
+      COALESCE(p.name, '') ASC
+    LIMIT limit_count
+    OFFSET offset_count;
+  END IF;
 END;
 $$;
 
@@ -612,5 +689,10 @@ CREATE INDEX IF NOT EXISTS idx_performance_metrics_category_created ON performan
 GRANT EXECUTE ON FUNCTION log_application_event TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION log_performance_metric TO authenticated, anon;
 
--- Initial refresh of materialized view
-SELECT refresh_product_catalog();
+-- Initial refresh of materialized view (only if it exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'product_catalog') THEN
+    PERFORM refresh_product_catalog();
+  END IF;
+END $$;

@@ -160,6 +160,7 @@ class Logger {
 
   private async persistLog(entry: LogEntry): Promise<void> {
     try {
+      // Try the new logging function first
       await supabase.rpc('log_application_event', {
         p_level: entry.level,
         p_category: entry.category,
@@ -172,7 +173,22 @@ class Logger {
         p_stack_trace: entry.stackTrace
       });
     } catch (error) {
-      console.warn('Failed to persist log to database:', error);
+      // If logging function doesn't exist, try direct table insert as fallback
+      try {
+        await supabase.from('application_logs').insert({
+          level: entry.level,
+          category: entry.category,
+          message: entry.message,
+          details: entry.details || null,
+          user_id: entry.userId || null,
+          session_id: entry.sessionId,
+          request_id: entry.requestId,
+          user_agent: entry.userAgent,
+          stack_trace: entry.stackTrace
+        });
+      } catch (fallbackError) {
+        console.warn('Failed to persist log to database (both RPC and direct insert failed):', error, fallbackError);
+      }
     }
   }
 
