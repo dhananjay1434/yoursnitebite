@@ -1,23 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
   <!-- Homepage - Highest Priority -->
   <url>
     <loc>https://yoursnitebite.netlify.app/</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-01-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://yoursnitebite.netlify.app/og-image.png</image:loc>
-      <image:title>Nitebite - Late Night Delivery in 10 Minutes</image:title>
-    </image:image>
   </url>
 
   <!-- Products Page - High Priority -->
   <url>
     <loc>https://yoursnitebite.netlify.app/products</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-01-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -25,7 +20,7 @@
   <!-- Snack Boxes - High Priority -->
   <url>
     <loc>https://yoursnitebite.netlify.app/snack-boxes</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-01-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -33,7 +28,7 @@
   <!-- Box Builder - Medium Priority -->
   <url>
     <loc>https://yoursnitebite.netlify.app/box-builder</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
