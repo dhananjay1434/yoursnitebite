@@ -100,18 +100,6 @@
 [forms]
   settings = true
 
-# Plugin for additional optimizations
-[[plugins]]
-  package = "@netlify/plugin-sitemap"
-
-  [plugins.inputs]
-    buildDir = "dist"
-    exclude = [
-      '/admin/**',
-      '/api/**',
-      '/checkout/payment/**',
-      '/order-details/**',
-      '/account/**',
-      '/login/**',
-      '/signup/**'
-    ]
+# Disable auto-sitemap generation since we have a custom one
+# [[plugins]]
+#   package = "@netlify/plugin-sitemap"

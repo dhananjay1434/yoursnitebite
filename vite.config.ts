@@ -67,5 +67,7 @@ export default defineConfig(({ mode }) => ({
     target: 'es2015',
     cssCodeSplit: true,
     assetsInlineLimit: 4096, // Inline small assets
+    // Ensure SEO files are copied to build output
+    copyPublicDir: true,
   },
 }));
