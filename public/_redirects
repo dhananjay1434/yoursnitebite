@@ -1,22 +1,3 @@
 
-# SEO-friendly redirects for Nitebite
-# Handle trailing slashes consistently
-/products/  /products  301
-/snack-boxes/  /snack-boxes  301
-/box-builder/  /box-builder  301
-
-# Legacy URL redirects (if you had any old URLs)
-/shop  /products  301
-/items  /products  301
-/boxes  /snack-boxes  301
-
-# Handle common typos and variations
-/product  /products  301
-/snackboxes  /snack-boxes  301
-/snack-box  /snack-boxes  301
-
-# API routes (if needed) - commented out since not used
-# /api/*  https://your-api-domain.com/api/:splat  200
-
-# SPA fallback - MUST be last
+# SPA fallback for React Router - MUST be last
 /*    /index.html   200
