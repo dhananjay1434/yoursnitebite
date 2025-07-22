@@ -1,6 +1,6 @@
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "npm run build && cp public/sitemap.xml dist/sitemap.xml"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -22,6 +22,10 @@
 
 [build.processing.images]
   compress = true
+
+# Disable Netlify's automatic sitemap generation
+[build.processing.skip_processing]
+  sitemap = true
 
 # SEO and Performance optimizations
 [[headers]]
@@ -103,3 +107,11 @@
 # Disable auto-sitemap generation since we have a custom one
 # [[plugins]]
 #   package = "@netlify/plugin-sitemap"
+
+# Force Netlify to use our custom sitemap
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "application/xml; charset=utf-8"
+    X-Content-Type-Options = "nosniff"

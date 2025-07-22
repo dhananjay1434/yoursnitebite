@@ -18,5 +18,8 @@
 # API routes (if needed)
 /api/*  https://your-api-domain.com/api/:splat  200
 
+# Force our custom sitemap to be served
+/sitemap.xml  /sitemap.xml  200!
+
 # SPA fallback - MUST be last
 /*    /index.html   200
