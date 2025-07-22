@@ -15,10 +15,8 @@
 /snackboxes  /snack-boxes  301
 /snack-box  /snack-boxes  301
 
-# API routes (if needed)
-/api/*  https://your-api-domain.com/api/:splat  200
-
-
+# API routes (if needed) - commented out since not used
+# /api/*  https://your-api-domain.com/api/:splat  200
 
 # SPA fallback - MUST be last
 /*    /index.html   200
