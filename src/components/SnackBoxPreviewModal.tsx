@@ -31,8 +31,13 @@ const SnackBoxPreviewModal: React.FC<SnackBoxPreviewModalProps> = ({ box, onClos
       id: box.id,
       name: box.name,
       price: box.price,
+      original_price: box.original_price || box.price,
       image_url: box.image_url,
+      image: box.image_url,
+      category: 'Snack Box',
+      category_id: 'snack-box',
       description: box.tagline,
+      stock_quantity: 100, // Assume snack boxes are always in stock
     });
     toast.success(`${box.name} added to your box!`, { duration: 3000 });
     onAddToCart();

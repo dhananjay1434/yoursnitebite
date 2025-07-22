@@ -9,6 +9,7 @@ import ProductsHeader from '@/components/products/ProductsHeader';
 import CategoriesSidebar from '@/components/products/CategoriesSidebar';
 import ProductsList from '@/components/products/ProductsList';
 import PromoBanner from '@/components/PromoBanner';
+import SEO from '@/components/SEO';
 import type { Product } from '@/components/ProductCard';
 
 const Products = () => {
@@ -100,8 +101,35 @@ const Products = () => {
     original_price: product.original_price || product.price // Ensure original_price is always present
   }));
 
+  // Generate SEO data based on current state
+  const getSEOData = () => {
+    if (searchQuery) {
+      return {
+        title: `Search Results for "${searchQuery}"`,
+        description: `Find ${searchQuery} and more late-night snacks, beverages, and essentials delivered in 10 minutes with Nitebite.`,
+        noindex: true, // Don't index search results
+      };
+    }
+
+    if (selectedCategory) {
+      const categoryName = categories.find(cat => cat.id === selectedCategory)?.name || selectedCategory;
+      return {
+        title: `${categoryName} - Late Night Delivery`,
+        description: `Order ${categoryName.toLowerCase()} for late-night delivery in just 10 minutes. Fresh ${categoryName.toLowerCase()} delivered to your doorstep across India.`,
+      };
+    }
+
+    return {
+      title: 'All Products - Late Night Delivery',
+      description: 'Browse our complete collection of snacks, beverages, chocolates, and essentials for late-night delivery in 10 minutes across India.',
+    };
+  };
+
+  const seoData = getSEOData();
+
   return (
     <div className="flex flex-col min-h-screen bg-nitebite-midnight">
+      <SEO {...seoData} />
       <PromoBanner />
       <ProductsHeader
         onSearch={handleSearch}

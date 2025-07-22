@@ -40,9 +40,11 @@ export function useProducts(categoryFilter?: string) {
         throw error;
       }
       
-      // Normalize image_url so it's always an array
+      // Normalize image_url so it's always an array and handle field mapping
       return (data || []).map((product: any) => ({
         ...product,
+        // Map item_name to name if it exists (handle database field mismatch)
+        name: product.name || product.item_name || `Product ${product.id}`,
         image_url: product.image_url
           ? (Array.isArray(product.image_url)
               ? product.image_url
@@ -95,9 +97,11 @@ export function useFeaturedProducts() {
         throw error;
       }
       
-      // Normalize image_url so it's always an array
+      // Normalize image_url so it's always an array and handle field mapping
       return (data || []).map((product: any) => ({
         ...product,
+        // Map item_name to name if it exists (handle database field mismatch)
+        name: product.name || product.item_name || `Product ${product.id}`,
         image_url: product.image_url
           ? (Array.isArray(product.image_url)
               ? product.image_url

@@ -9,9 +9,10 @@ import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
 import FloatingBox from '@/components/FloatingBox';
 import SnackBoxPreviewModal from '@/components/SnackBoxPreviewModal';
+import SEO from '@/components/SEO';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
-import { supabase } from '@/supabaseClient';
+// import { supabase } from '@/supabaseClient'; // TODO: Re-enable when vibe_boxes schema is fixed
 
 // Types matching the 'vibe_boxes' table schema
 interface VibeItem {
@@ -33,36 +34,91 @@ interface VibeBox {
   items: VibeItem[];
 }
 
+// Mock data for vibe boxes until database is properly set up
+const getMockVibeBoxes = (): VibeBox[] => [
+  {
+    id: 'vibe-1',
+    name: 'Study Session Fuel',
+    tagline: 'Perfect snacks for those late-night study marathons',
+    price: 299,
+    original_price: 349,
+    image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
+    highlights: ['🍿', '🥤', '🍫'],
+    items: [
+      { name: 'Popcorn', image: '🍿', price: 50 },
+      { name: 'Energy Drink', image: '🥤', price: 80 },
+      { name: 'Chocolate Bar', image: '🍫', price: 60 },
+      { name: 'Mixed Nuts', image: '🥜', price: 70 },
+      { name: 'Cookies', image: '🍪', price: 40 }
+    ]
+  },
+  {
+    id: 'vibe-2',
+    name: 'Movie Night Special',
+    tagline: 'Cinema-style snacks for the perfect movie experience',
+    price: 399,
+    original_price: 449,
+    image_url: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=400',
+    highlights: ['🍿', '🥤', '🍭'],
+    items: [
+      { name: 'Caramel Popcorn', image: '🍿', price: 80 },
+      { name: 'Cold Drink', image: '🥤', price: 60 },
+      { name: 'Candy Mix', image: '🍭', price: 90 },
+      { name: 'Nachos', image: '🌮', price: 100 },
+      { name: 'Ice Cream', image: '🍦', price: 70 }
+    ]
+  },
+  {
+    id: 'vibe-3',
+    name: 'Gaming Marathon',
+    tagline: 'High-energy snacks to keep you gaming all night',
+    price: 349,
+    original_price: 399,
+    image_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400',
+    highlights: ['⚡', '🥤', '🍕'],
+    items: [
+      { name: 'Energy Bars', image: '⚡', price: 90 },
+      { name: 'Sports Drink', image: '🥤', price: 70 },
+      { name: 'Mini Pizza', image: '🍕', price: 120 },
+      { name: 'Trail Mix', image: '🥜', price: 60 },
+      { name: 'Protein Shake', image: '🥛', price: 80 }
+    ]
+  }
+];
+
 const SnackBoxSelector: React.FC = () => {
   const { addItem } = useCartStore();
   const [boxes, setBoxes] = useState<VibeBox[]>([]);
   const [selectedBox, setSelectedBox] = useState<VibeBox | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // TODO: Re-enable when using real API
 
   // Fetch boxes from Supabase on mount
   useEffect(() => {
     const fetchBoxes = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from<VibeBox>('vibe_boxes')
-        .select('id, name, tagline, price, original_price, image_url, items')
-        .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Supabase fetch error:', error.message);
-        setError(error.message);
-      } else if (data) {
-        // Map JSON fields if needed
-        setBoxes(
-          data.map((b) => ({
-            ...b,
-            image_url: b.image_url,
-            items: b.items || [],
-            highlights: b.items?.map((it) => it.image) || [],
-          }))
-        );
+      try {
+        // For now, use mock data since vibe_boxes table has schema issues
+        // TODO: Fix vibe_boxes table schema and replace with actual Supabase query
+        console.log('Loading vibe boxes...');
+
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        setBoxes(getMockVibeBoxes());
+
+        // Future implementation when database is fixed:
+        // const { data, error } = await supabase
+        //   .from('vibe_boxes')
+        //   .select('id, name, tagline, price, original_price, image_url, items')
+        //   .order('created_at', { ascending: true });
+
+      } catch (err) {
+        console.warn('Error loading vibe boxes:', err);
+        setBoxes(getMockVibeBoxes());
       }
+
       setLoading(false);
     };
 
@@ -74,8 +130,13 @@ const SnackBoxSelector: React.FC = () => {
       id: box.id,
       name: box.name,
       price: box.price,
+      original_price: box.original_price || box.price,
       image_url: box.image_url,
+      image: box.image_url,
+      category: 'Snack Box',
+      category_id: 'snack-box',
       description: box.tagline,
+      stock_quantity: 100, // Assume snack boxes are always in stock
     });
     toast.success(`${box.name} added to your box!`, { duration: 3000 });
   };
@@ -92,16 +153,37 @@ const SnackBoxSelector: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="py-16 bg-nitebite-midnight text-center text-red-400">
-        Error loading snack boxes: {error}
-      </div>
-    );
-  }
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Snack Boxes - Nitebite',
+    description: 'Curated snack boxes for every late-night scenario. Find your perfect combination of snacks, beverages, and treats.',
+    url: 'https://yoursnitebite.netlify.app/snack-boxes',
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: boxes.length,
+      itemListElement: boxes.map((box, index) => ({
+        '@type': 'Product',
+        position: index + 1,
+        name: box.name,
+        description: box.tagline,
+        offers: {
+          '@type': 'Offer',
+          price: box.price,
+          priceCurrency: 'INR',
+          availability: 'https://schema.org/InStock',
+        },
+      })),
+    },
+  };
 
   return (
     <>
+      <SEO
+        title="Curated Snack Boxes - Late Night Delivery"
+        description="Discover our curated snack boxes perfect for every late-night scenario. Choose from gaming boxes, study boxes, movie night boxes and more. Delivered in 10 minutes."
+        schema={schema}
+      />
       <NewNavbar transparent={false} />
       <div className="min-h-screen bg-nitebite-midnight pt-20 pb-16">
         <div className="container mx-auto px-4">

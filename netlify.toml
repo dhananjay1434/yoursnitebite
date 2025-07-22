@@ -1,0 +1,117 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Build optimization
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = true
+
+# SEO and Performance optimizations
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache optimization for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache optimization for images
+[[headers]]
+  for = "/*.{png,jpg,jpeg,gif,webp,svg,ico}"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# SEO files caching
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "text/plain"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "application/xml"
+
+# Redirect rules for SEO
+[[redirects]]
+  from = "/products/"
+  to = "/products"
+  status = 301
+
+[[redirects]]
+  from = "/snack-boxes/"
+  to = "/snack-boxes"
+  status = 301
+
+[[redirects]]
+  from = "/box-builder/"
+  to = "/box-builder"
+  status = 301
+
+# Legacy redirects
+[[redirects]]
+  from = "/shop"
+  to = "/products"
+  status = 301
+
+[[redirects]]
+  from = "/items"
+  to = "/products"
+  status = 301
+
+[[redirects]]
+  from = "/boxes"
+  to = "/snack-boxes"
+  status = 301
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Form handling (if you have contact forms)
+[forms]
+  settings = true
+
+# Plugin for additional optimizations
+[[plugins]]
+  package = "@netlify/plugin-sitemap"
+
+  [plugins.inputs]
+    buildDir = "dist"
+    exclude = [
+      '/admin/**',
+      '/api/**',
+      '/checkout/payment/**',
+      '/order-details/**',
+      '/account/**',
+      '/login/**',
+      '/signup/**'
+    ]

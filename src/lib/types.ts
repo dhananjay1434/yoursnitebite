@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  original_price?: number; // Optional field for discounted products
   image_url: string[]; // Array of image URLs
   category_id: string;
   is_featured: boolean;

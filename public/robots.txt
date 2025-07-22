@@ -1,0 +1,41 @@
+# Robots.txt for Nitebite - Late Night Delivery Platform
+# Optimized for search engine crawling and indexing
+
+User-agent: *
+Allow: /
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Block unnecessary crawling of admin/auth pages
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/payment/
+Disallow: /order-details/
+Disallow: /account/
+Disallow: /login/
+Disallow: /signup/
+
+# Block crawling of search results to prevent duplicate content
+Disallow: /products?search=*
+Disallow: /products?*search*
+
+# Allow crawling of product categories
+Allow: /products?category=*
+
+# Block crawling of dynamic/temporary files
+Disallow: /*.json$
+Disallow: /lovable-uploads/temp/
+
+# Sitemap location
+Sitemap: https://yoursnitebite.netlify.app/sitemap.xml
+
+# Crawl delay for respectful crawling (optional)
+Crawl-delay: 1

@@ -67,30 +67,24 @@ class RateLimitingService {
    */
   async checkOrderRateLimit(userId: string): Promise<RateLimitResult> {
     try {
-      // First check if the function exists
+      // Try to call the database function
       const { data, error } = await supabase.rpc('check_order_rate_limit', {
         p_user_id: userId
       });
 
       if (error) {
-        console.warn('Rate limit check failed, using fallback:', error.message);
+        console.warn('Database rate limit check failed, using client-side fallback:', error.message);
 
-        // If the function doesn't exist, use client-side rate limiting as fallback
-        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
-          console.log('Database rate limiting not available, using client-side fallback');
-          return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
-        }
-
-        // Allow request if rate limiting service is down
-        return {
-          allowed: true,
-          currentCount: 0,
-          resetTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          message: 'Rate limiting service temporarily unavailable'
-        };
+        // Always use client-side fallback if database function fails
+        return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
       }
 
-      const result = data[0];
+      const result = data?.[0];
+
+      if (!result) {
+        console.warn('No result from rate limit check, using fallback');
+        return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
+      }
 
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Order rate limit exceeded', {
@@ -112,7 +106,7 @@ class RateLimitingService {
       };
 
     } catch (error) {
-      console.warn('Rate limit check error, using fallback:', error);
+      console.warn('Rate limit check error, using client-side fallback:', error);
       // Use client-side rate limiting as fallback
       return this.checkClientRateLimit(`order_${userId}`, RATE_LIMIT_CONFIGS.ORDER_CREATION);
     }
@@ -128,21 +122,16 @@ class RateLimitingService {
       });
 
       if (error) {
-        console.warn('Login rate limit check failed, using fallback:', error.message);
-
-        // If the function doesn't exist, use client-side rate limiting as fallback
-        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
-          return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
-        }
-
-        return {
-          allowed: true,
-          currentCount: 0,
-          resetTime: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-        };
+        console.warn('Database login rate limit check failed, using client-side fallback:', error.message);
+        return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
       }
 
-      const result = data[0];
+      const result = data?.[0];
+
+      if (!result) {
+        console.warn('No result from login rate limit check, using fallback');
+        return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
+      }
 
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Login rate limit exceeded', {
@@ -164,7 +153,7 @@ class RateLimitingService {
       };
 
     } catch (error) {
-      console.warn('Login rate limit check error, using fallback:', error);
+      console.warn('Login rate limit check error, using client-side fallback:', error);
       return this.checkClientRateLimit(`login_${identifier}`, RATE_LIMIT_CONFIGS.LOGIN_ATTEMPT);
     }
   }
@@ -179,21 +168,16 @@ class RateLimitingService {
       });
 
       if (error) {
-        console.warn('Coupon rate limit check failed, using fallback:', error.message);
-
-        // If the function doesn't exist, use client-side rate limiting as fallback
-        if (error.message?.includes('function') || error.message?.includes('does not exist')) {
-          return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
-        }
-
-        return {
-          allowed: true,
-          currentCount: 0,
-          resetTime: new Date(Date.now() + 60 * 60 * 1000).toISOString()
-        };
+        console.warn('Database coupon rate limit check failed, using client-side fallback:', error.message);
+        return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
       }
 
-      const result = data[0];
+      const result = data?.[0];
+
+      if (!result) {
+        console.warn('No result from coupon rate limit check, using fallback');
+        return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
+      }
 
       if (!result.allowed) {
         await logger.warn(LogCategory.SECURITY, 'Coupon rate limit exceeded', {
@@ -215,7 +199,7 @@ class RateLimitingService {
       };
 
     } catch (error) {
-      console.warn('Coupon rate limit check error, using fallback:', error);
+      console.warn('Coupon rate limit check error, using client-side fallback:', error);
       return this.checkClientRateLimit(`coupon_${userId}`, RATE_LIMIT_CONFIGS.COUPON_VALIDATION);
     }
   }
@@ -287,7 +271,7 @@ class RateLimitingService {
     try {
       // Get client IP (this would need to be implemented based on your setup)
       const clientIP = await this.getClientIP();
-      
+
       if (!clientIP) {
         return false; // Allow if we can't determine IP
       }
@@ -297,7 +281,7 @@ class RateLimitingService {
       });
 
       if (error) {
-        console.error('IP block check failed:', error);
+        console.warn('Database IP block check failed, allowing access:', error.message);
         return false; // Allow if check fails
       }
 
@@ -309,10 +293,10 @@ class RateLimitingService {
         });
       }
 
-      return data || false;
+      return Boolean(data);
 
     } catch (error) {
-      console.error('IP block check error:', error);
+      console.warn('IP block check error, allowing access:', error);
       return false;
     }
   }
@@ -327,13 +311,18 @@ class RateLimitingService {
     severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
   ): Promise<void> {
     try {
-      await supabase.rpc('log_suspicious_activity', {
+      const { error } = await supabase.rpc('log_suspicious_activity', {
         p_activity_type: activityType,
         p_identifier: identifier,
         p_details: details ? JSON.stringify(details) : null,
         p_severity: severity
       });
 
+      if (error) {
+        console.warn('Database suspicious activity logging failed:', error.message);
+      }
+
+      // Always log locally regardless of database success
       await logger.warn(LogCategory.SECURITY, `Suspicious activity: ${activityType}`, {
         identifier,
         details,
@@ -341,7 +330,18 @@ class RateLimitingService {
       });
 
     } catch (error) {
-      console.error('Failed to log suspicious activity:', error);
+      console.warn('Failed to log suspicious activity to database:', error);
+
+      // Still log locally even if database fails
+      try {
+        await logger.warn(LogCategory.SECURITY, `Suspicious activity: ${activityType}`, {
+          identifier,
+          details,
+          severity
+        });
+      } catch (logError) {
+        console.error('Failed to log suspicious activity locally:', logError);
+      }
     }
   }
 

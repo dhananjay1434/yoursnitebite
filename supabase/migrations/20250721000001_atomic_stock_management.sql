@@ -14,6 +14,11 @@
 DROP TRIGGER IF EXISTS update_stock_after_order ON orders;
 DROP TRIGGER IF EXISTS update_vibe_box_stock_after_order ON orders;
 
+-- Drop existing function if it exists with different signature
+-- Handle multiple possible signatures that might exist
+DROP FUNCTION IF EXISTS process_order_with_atomic_stock(uuid, jsonb, jsonb);
+DROP FUNCTION IF EXISTS process_order_with_atomic_stock CASCADE;
+
 -- Create atomic stock validation and update function
 CREATE OR REPLACE FUNCTION process_order_with_atomic_stock(
   p_user_id uuid,
@@ -133,18 +138,29 @@ BEGIN
 END;
 $$;
 
--- Add stock constraints to prevent negative stock
-ALTER TABLE products 
-ADD CONSTRAINT products_stock_non_negative 
-CHECK (stock_quantity >= 0);
-
--- Add similar constraint for vibe_boxes if it exists
+-- Add stock constraints to prevent negative stock (only if they don't exist)
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vibe_boxes') THEN
-    ALTER TABLE vibe_boxes 
-    ADD CONSTRAINT vibe_boxes_stock_non_negative 
+  -- Add constraint for products table
+  BEGIN
+    ALTER TABLE products
+    ADD CONSTRAINT products_stock_non_negative
     CHECK (stock_quantity >= 0);
+  EXCEPTION WHEN duplicate_object THEN
+    -- Constraint already exists, that's fine
+    NULL;
+  END;
+
+  -- Add similar constraint for vibe_boxes if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vibe_boxes') THEN
+    BEGIN
+      ALTER TABLE vibe_boxes
+      ADD CONSTRAINT vibe_boxes_stock_non_negative
+      CHECK (stock_quantity >= 0);
+    EXCEPTION WHEN duplicate_object THEN
+      -- Constraint already exists, that's fine
+      NULL;
+    END;
   END IF;
 END $$;
 

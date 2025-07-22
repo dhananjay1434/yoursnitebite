@@ -31,22 +31,36 @@ const Index = () => {
     }
   };
 
-  const schema: WithContext<Organization> = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'Nitebite',
-    url: 'https://nitebite.com',
-    logo: 'https://nitebite.com/logo.png',
-    description: 'Late night delivery service offering snacks, beverages, and essentials in 10 minutes across India.',
-    address: {
-      '@type': 'PostalAddress',
-      addressCountry: 'IN',
+  // Combined schema for Organization and WebSite
+  const schema = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Nitebite',
+      url: 'https://yoursnitebite.netlify.app',
+      logo: 'https://yoursnitebite.netlify.app/logo.png',
+      description: 'Late night delivery service offering snacks, beverages, and essentials in 10 minutes across India.',
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'IN',
+      },
+      sameAs: [
+        'https://www.instagram.com/nitebit.e/',
+        'https://linkedin.com/company/nitebite',
+      ],
     },
-    sameAs: [
-      'https://www.instagram.com/nitebit.e/',
-      'https://linkedin.com/company/nitebite',
-    ],
-  };
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Nitebite',
+      url: 'https://yoursnitebite.netlify.app',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://yoursnitebite.netlify.app/products?search={search_term_string}',
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ];
 
   return (
     <AnimatePresence>

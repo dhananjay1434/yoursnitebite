@@ -99,7 +99,7 @@ export function setSecurityHeaders(): void {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
-      "font-src 'self' data:",
+      "font-src 'self' data: https://cdn.fontshare.com",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
       "base-uri 'self'",
       "form-action 'self'"

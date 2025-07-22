@@ -32,15 +32,47 @@ const VibeSelector: React.FC = () => {
 
   useEffect(() => {
     const fetchVibes = async () => {
-      const { data, error: supaError } = await supabase
-        .from<VibeBox>('vibe_boxes')
-        .select('id, name, tagline, price, original_price, image_url')
-        .order('created_at', { ascending: true });
-      if (supaError) {
-        console.error('Supabase request failed', supaError);
-        setError(supaError.message);
-      } else if (data) {
-        setVibeBoxes(data);
+      try {
+        // For now, use mock data since vibe_boxes table has schema issues
+        // TODO: Fix vibe_boxes table schema and replace with actual Supabase query
+        console.log('Loading vibe boxes for carousel...');
+
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Use simplified mock data for the carousel
+        const mockVibes: VibeBox[] = [
+          {
+            id: 'vibe-1',
+            name: 'Study Session Fuel',
+            tagline: 'Perfect snacks for those late-night study marathons',
+            price: 299,
+            original_price: 349,
+            image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400'
+          },
+          {
+            id: 'vibe-2',
+            name: 'Movie Night Special',
+            tagline: 'Cinema-style snacks for the perfect movie experience',
+            price: 399,
+            original_price: 449,
+            image_url: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=400'
+          },
+          {
+            id: 'vibe-3',
+            name: 'Gaming Marathon',
+            tagline: 'High-energy snacks to keep you gaming all night',
+            price: 349,
+            original_price: 399,
+            image_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400'
+          }
+        ];
+
+        setVibeBoxes(mockVibes);
+
+      } catch (err) {
+        console.warn('Error loading vibe boxes:', err);
+        setError('Failed to load vibe boxes');
       }
       setLoading(false);
     };

@@ -15,56 +15,37 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://nitebite.com/" />
+    <meta property="og:url" content="https://yoursnitebite.netlify.app/" />
     <meta property="og:title" content="Nitebite - Late Night Delivery in 10 Minutes" />
     <meta property="og:description" content="Order snacks, beverages, and essentials for late-night delivery in just 10 minutes. Available 24/7 across India." />
-    <meta property="og:image" content="/og-image.png" />
-    
+    <meta property="og:image" content="https://yoursnitebite.netlify.app/og-image.png" />
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://nitebite.com/" />
+    <meta property="twitter:url" content="https://yoursnitebite.netlify.app/" />
     <meta property="twitter:title" content="Nitebite - Late Night Delivery in 10 Minutes" />
     <meta property="twitter:description" content="Order snacks, beverages, and essentials for late-night delivery in just 10 minutes. Available 24/7 across India." />
-    <meta property="twitter:image" content="/og-image.png" />
+    <meta property="twitter:image" content="https://yoursnitebite.netlify.app/twitter-image.png" />
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.ico" />
-    
+
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://nitebite.com/" />
-    
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Nitebite",
-        "url": "https://nitebite.com",
-        "logo": "https://nitebite.com/logo.png",
-        "description": "Late night delivery service offering snacks, beverages, and essentials in 10 minutes across India.",
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "IN"
-        },
-        "sameAs": [
-          "https://www.instagram.com/nitebit.e/",
-          "https://linkedin.com/company/nitebite"
-        ]
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Nitebite",
-        "url": "https://nitebite.com",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://nitebite.com/search?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }
-    </script>
+    <link rel="canonical" href="https://yoursnitebite.netlify.app/" />
+
+    <!-- Preload critical resources for better Core Web Vitals -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="preload" href="/src/index.css" as="style" />
+    <link rel="dns-prefetch" href="https://cdn.gpteng.co" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#38BDF8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Structured Data will be handled by React components for better dynamic control -->
   </head>
 
   <body>

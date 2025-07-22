@@ -19,7 +19,7 @@ const securityHeadersPlugin = () => ({
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
-        "font-src 'self' data:",
+        "font-src 'self' data: https://cdn.fontshare.com",
         "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:*",
         "base-uri 'self'",
         "form-action 'self'"
@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Optimize for production
+    // Optimize for production and SEO
     minify: 'terser',
     sourcemap: false,
     rollupOptions: {
@@ -54,8 +54,18 @@ export default defineConfig(({ mode }) => ({
           vendor: ['react', 'react-dom'],
           supabase: ['@supabase/supabase-js'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-select'],
+          router: ['react-router-dom'],
+          seo: ['react-helmet-async', 'react-schemaorg'],
         },
+        // Optimize chunk names for better caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
+    // Optimize for Core Web Vitals
+    target: 'es2015',
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096, // Inline small assets
   },
 }));

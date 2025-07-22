@@ -14,7 +14,8 @@ import CategoryTracker from '@/components/CategoryTracker';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cartStore';
 // Assuming Product type is defined here or imported globally
-import { UserPreference, ScoredProduct, Product } from '../types/recommendation';
+import { UserPreference, ScoredProduct } from '../types/recommendations';
+import { Product } from '../lib/types';
 // Rename imported function to avoid naming collision
 import { generateRecommendations, trackProductView as trackViewUtil } from '../utils/recommendations';
 import { initUserPreferences, getCurrentUserId } from '../utils/initUserPreferences';
@@ -32,7 +33,27 @@ const fetchProducts = async (): Promise<Product[]> => { // Add return type
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || []; // Ensure array is returned
+
+  // Debug: Log the raw product data to identify missing fields
+  console.log('Raw product data from database:', data);
+
+  // Normalize the data to match our Product interface
+  const normalizedProducts = (data || []).map((product: any) => ({
+    ...product,
+    // Ensure image_url is always an array for consistency with Product type
+    image_url: product.image_url
+      ? (Array.isArray(product.image_url) ? product.image_url : [product.image_url])
+      : [],
+    // Ensure original_price exists
+    original_price: product.original_price || product.price,
+    // Map item_name to name if it exists (handle database field mismatch)
+    name: product.name || product.item_name || `Product ${product.id}`,
+    description: product.description || '',
+    stock_quantity: product.stock_quantity || 0
+  }));
+
+  console.log('Normalized product data:', normalizedProducts);
+  return normalizedProducts;
 };
 
 // Fetch category list
@@ -233,16 +254,29 @@ const BoxBuilder = () => {
       const product = products.find((p) => p.id === itemId);
       if (product && quantity > 0) {
          const categoryName = categories.find(c => c.id === product.category_id)?.name ?? 'Unknown'; // Get category name
+
+         // Validate required fields before adding to cart
+         if (!product.name) {
+           console.error('Product missing name field:', product);
+           return; // Skip this product
+         }
+
+         // Ensure image_url is properly formatted
+         const imageUrl = Array.isArray(product.image_url)
+           ? product.image_url[0] || ''
+           : product.image_url || '';
+
          addItem({
           id: product.id,
           name: product.name,
-          price: product.price,
-          original_price: product.original_price,
-          image_url: product.image_url,
+          price: product.price || 0,
+          original_price: product.original_price || product.price || 0,
+          image_url: imageUrl,
+          image: imageUrl, // Add both formats for compatibility
           category: categoryName, // Use fetched category name
           category_id: product.category_id,
-          description: product.description,
-          stock_quantity: product.stock_quantity,
+          description: product.description || '',
+          stock_quantity: product.stock_quantity || 0,
           quantity: quantity
         });
         itemsAdded += Number(quantity);
@@ -422,7 +456,7 @@ const BoxBuilder = () => {
   // Derive state inside component body after hooks and loading checks
   const categoryCount = selectedCategories.length;
   const hasSpecialCategory = selectedCategories.includes(specialCategoryId);
-  const hasMinCats = categoryCount >= 2; // Define hasMinCats here based on current categoryCount
+  // const hasMinCats = categoryCount >= 2; // Removed unused variable
 
   return (
     <>
@@ -462,7 +496,7 @@ const BoxBuilder = () => {
           {/* Scrollable Category Buttons */}
           <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-nitebite-dark-accent scrollbar-track-nitebite-dark/50">
             <Button
-              variant={selectedCategory === null ? 'solid' : 'outline'}
+              variant={selectedCategory === null ? 'default' : 'outline'}
               onClick={() => setSelectedCategory(null)}
               className="min-w-max flex-shrink-0"
               size="sm" // Smaller buttons for horizontal list
@@ -475,7 +509,7 @@ const BoxBuilder = () => {
               return (
                 <Button
                   key={cat.id}
-                  variant={isSelected ? 'solid' : 'outline'}
+                  variant={isSelected ? 'default' : 'outline'}
                   onClick={() => setSelectedCategory(cat.id)}
                   size="sm" // Smaller buttons
                   className={`min-w-max relative flex-shrink-0 transition-all duration-200 ${
@@ -629,7 +663,7 @@ const BoxBuilder = () => {
                     </div>
                     {/* Image */}
                     <img
-                       src={product.image_url || '/placeholder.png'} // Added placeholder fallback
+                       src={Array.isArray(product.image_url) ? product.image_url[0] : product.image_url || '/placeholder.png'} // Handle array and fallback
                        alt={product.name}
                        className="w-full aspect-[4/3] object-cover rounded-md transition-transform duration-300 group-hover:scale-105 bg-nitebite-dark-accent/20" // Background for loading/missing image
                        loading="lazy"
@@ -822,7 +856,7 @@ const BoxBuilder = () => {
                                 </span>
                             )}
                             <img
-                                src={recProduct.image_url || '/placeholder.png'}
+                                src={Array.isArray(recProduct.image_url) ? recProduct.image_url[0] : recProduct.image_url || '/placeholder.png'}
                                 alt={recProduct.name}
                                 className="w-full aspect-[4/3] object-cover rounded-md mb-2 transition-transform duration-300 group-hover:scale-105 bg-nitebite-dark-accent/20"
                                 loading="lazy"

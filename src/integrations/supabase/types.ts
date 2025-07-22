@@ -269,6 +269,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          id: string
+          userid: string
+          categorypreferences: Record<string, number>
+          tagpreferences: Record<string, number>
+          viewhistory: string[]
+          purchasehistory: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          userid: string
+          categorypreferences?: Record<string, number>
+          tagpreferences?: Record<string, number>
+          viewhistory?: string[]
+          purchasehistory?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          userid?: string
+          categorypreferences?: Record<string, number>
+          tagpreferences?: Record<string, number>
+          viewhistory?: string[]
+          purchasehistory?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -292,6 +325,61 @@ export type Database = {
           message: string
           discount_amount: number
         }[]
+      }
+      check_rate_limit: {
+        Args: {
+          p_identifier: string
+          p_endpoint: string
+          p_max_requests?: number
+          p_window_minutes?: number
+          p_block_minutes?: number
+        }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_time: string
+          blocked_until: string | null
+        }[]
+      }
+      check_order_rate_limit: {
+        Args: { p_user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_time: string
+          blocked_until: string | null
+        }[]
+      }
+      check_login_rate_limit: {
+        Args: { p_identifier: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_time: string
+          blocked_until: string | null
+        }[]
+      }
+      check_coupon_rate_limit: {
+        Args: { p_user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_time: string
+          blocked_until: string | null
+        }[]
+      }
+      is_ip_blocked: {
+        Args: { p_ip_address: string }
+        Returns: boolean
+      }
+      log_suspicious_activity: {
+        Args: {
+          p_activity_type: string
+          p_identifier: string
+          p_details?: any
+          p_severity?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
